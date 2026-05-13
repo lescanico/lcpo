@@ -1,4 +1,4 @@
-# CMPO: Capacity Management under Partial Observability
+# LCPO: Longitudinal Capacity under Partial Observability
 
 *The road to hell is paved with partial observability.*
 
