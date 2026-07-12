@@ -28,6 +28,19 @@ There is no human buffer (`buffer_cap = 0`, a principled structural decision):
 the model measures the gap and refuses to model where it goes. Conservation is
 asserted numerically every step of every run.
 
+## The one-line version
+
+`minimal.R` is the seed-crystal claim in four objects (template, panel,
+backlog, thermostat) and one line of arithmetic: attended hours can never
+exceed `u·C`, so a utilization dashboard's visible slack can never read below
+`C·(1−u)` ≈ 9 h — **the signal is censored exactly where the danger is**. An
+intake thermostat that expands on visible slack and contracts on visible
+saturation therefore has an arithmetically unreachable contract condition:
+it only ever expands, and conserved demand accumulates without bound while
+the dashboard shows a day of open time, every week, forever. The same
+thermostat governed on total burden is stable. `Rscript minimal.R` prints
+both runs and regenerates `figs/fig0_censoring.png`.
+
 ## What the model shows
 
 1. **Physics alone is survivable here.** At the charitable defaults, with fixed
