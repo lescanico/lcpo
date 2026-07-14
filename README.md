@@ -1,122 +1,189 @@
-# LCPO: Longitudinal Capacity under Partial Observability
+LCPO — Longitudinal Capacity under Partial Observability
 
-*The road to hell is paved with partial observability.*
+A minimal dynamical model of intake governance in continuity-based (longitudinal) care systems. It isolates a single question and answers it in closed form:
 
-------------------------------------------------------------------------
+Does the rule for splitting finite capacity between standing follow-up obligations and new intake, on its own, separate unconditional stability from structural divergence?
+Answer (within the model class): yes, and the stability boundary has an exact, interpretable, closed form.
 
-## The claim
+________________________________________
 
-In longitudinal care, what dashboards measure (utilization, availability,
-throughput) is not what determines whether the system is sustainable
-(follow-up obligations, hidden work, latent demand). This repository is a
-minimal, auditable, deliberately charitable model of that gap.
+Status of the claims (read this first)
 
-The model is a **conservation law under an observability filter**. Demand,
-capacity, and workload are a single conserved time-quantity (hours). The one
-load-bearing empirical assumption: **unmet demand does not evaporate** — it
-carries forward, re-presents, and accumulates. Every week, panel-active demand
-partitions exactly into four channels:
+This project deliberately separates three epistemic layers. Keeping them distinct is the point; collapsing them is the main failure mode to avoid.
 
-| channel | meaning |
-|---|---|
-| **served** | met through the legitimate visible channel (scheduled, attended) |
-| **absorbed** | met through accidental structural buffers (no-show slots + unscheduled slots) |
-| **unmet** | overflow — *disposition-agnostic* unmet demand (the headline) |
-| **carried** | booked but no-showed; re-presents next week |
+Layer
+Claim
+Status
+1. Analytic
+If a system has this structure, the sustainability boundary is `p_in·(1+L) ≤ 1`.
+Established. A theorem about the model, confirmed numerically to grid resolution. Needs no empirical validation.
+2. Falsifiable prediction
+Real panels crossing the boundary accumulate backlog; those below it stay bounded.
+Specified, sharp, untested. A risky quantitative prediction.
+3. Empirical correspondence
+Real continuity-care systems are in this model class (conserved, forward-generating obligation; estimable, stable-enough `L`).
+Open. Only data can adjudicate.
 
-There is no human buffer (`buffer_cap = 0`, a principled structural decision):
-the model measures the gap and refuses to model where it goes. Conservation is
-asserted numerically every step of every run.
+The elegance of Layer 1 is NOT evidence for Layer 3. A wrong model can be beautiful. The value here is not "this is true of the world" but "this is provable-or-refutable about the world" — a sharp test where most work in this space offers only unfalsifiable framing.
 
-## The one-line version
+________________________________________
 
-`minimal.R` is the seed-crystal claim in four objects (template, panel,
-backlog, thermostat) and one line of arithmetic: attended hours can never
-exceed `u·C`, so a utilization dashboard's visible slack can never read below
-`C·(1−u)` ≈ 9 h — **the signal is censored exactly where the danger is**. An
-intake thermostat that expands on visible slack and contracts on visible
-saturation therefore has an arithmetically unreachable contract condition:
-it only ever expands, and conserved demand accumulates without bound while
-the dashboard shows a day of open time, every week, forever. The same
-thermostat governed on total burden is stable. `Rscript minimal.R` prints
-both runs and regenerates `figs/fig0_censoring.png`.
+The model (MVP / first pillar)
 
-## What the model shows
+Discrete-time, single-clinician, time-quantity (hours) stock-flow. Starts empty.
 
-1. **Physics alone is survivable here.** At the charitable defaults, with fixed
-   intake, unmet demand is zero at *every* observability level. Partial
-   observability does not destroy demand fulfillment directly — it creates
-   **misperception**: at `p_surf = 0.1` the dashboard shows ~30 h of weekly
-   slack while the clinician is fully loaded.
+Two intake-governance regimes on identical demand/capacity dynamics:
 
-2. **Harm enters through governance.** Give the same rational thermostat
-   (expand intake on visible slack, contract on visible saturation) different
-   dashboard signals:
-   - **attended-hours slack** — no-shows put a floor of `C·(1−p_uti)` ≈ 9 h
-     under this signal, so saturation is *never visible* and the thermostat
-     only expands: runaway at every `p_surf` (~2,800–3,000 h unmet over 2 yrs).
-   - **booking availability** — saturation becomes visible, but only after
-     hidden demand surfaces into bookings: cumulative unmet demand falls
-     monotonically from ~770 h at `p_surf = 0.1` to 0 at `p_surf ≥ 0.6`
-     (**the unmet wedge**, `figs/fig1_unmet_wedge.png`).
-   - **estimated total burden** — safe at every `p_surf`.
+A — flexible / residual intake: standing obligations served first; intake takes whatever capacity remains (intake is endogenous).
+B — reactive / fixed intake: `p_in · C` reserved off the top for intake; obligations compete for the remainder.
+Dormant knobs (held at identity for this pillar): `p_surf = 1` (full observability) and `p_uti = 1` (no no-shows). With these off, the accumulating quantity is capacity-overflowing demand, NOT hidden demand. Observability (the censored-signal claim) is a separate pillar. Outflow composition (formal discharge vs. attrition vs. balking vs. death) is deliberately collapsed into a single `p_out` here and NOT decomposed.
 
-3. **Intrinsic runaway is a generation-side phase boundary.** From an *empty*
-   panel, overload ignites at `p_gen ≈ 1.05–1.075` (at `p_out = 0.05`), nearly
-   independent of `p_surf` and of initial conditions
-   (`figs/fig2_phase_map.png`). The runaway stock is *uncleared* demand, whose
-   point of no return tracks the closed form `uncleared > (1 − p_in)·C`.
+Parameters
 
-4. **Stress tests (anti-sophistry), built in:** the phase boundary does not
-   move with initial panel load ("systems drift into this", not merely "can't
-   escape it"); equal `p_gen/p_out` ratios do **not** collapse onto equal
-   outcomes (the ratio alone is not the mechanism); with a small attrition
-   leak on uncleared demand the steady-state divergence heals but the
-   cumulative harm (hundreds of hours) is already banked.
+Symbol
+Meaning
+`C`
+weekly capacity (hours)
+`p_in`
+intake reservation fraction (Regime B lever; endogenous in A)
+`p_out`
+attrition per period (lower = more longitudinal; defines the system class)
+`p_act`
+activation: fraction of panel obligation coming due per period
+`p_gen`
+forward obligation generated per served encounter
 
-Unmet demand is reported cumulatively (total harm), as a steady-state rate
-(diverging vs stabilized), and as an FTE conversion (`cum_unmet_h / 1840`).
+________________________________________
 
-## Run it
+The central result
 
-``` r
-Rscript experiments.R
-```
+Closed-form stability boundary (Regime B)
 
-No external dependencies (base R only). Prints all experiment tables and
-regenerates `figs/fig1`–`fig4`.
+Let the generation-loop factor `a = (1 − p_act·(1 − p_gen))·(1 − p_out)`.
 
-## Files
+If `a ≥ 1`: panel diverges for all `p_in` → `max_safe_p_in = 0`.
+Else: `max_safe_p_in = M / (M + N)` where
+`M = p_out + p_act·(1 − p_gen)·(1 − p_out)`
+`N = p_act·p_gen·(1 − p_out)`
+(note `M + N = p_out + p_act·(1 − p_out)`, independent of `p_gen`)
+The 1-D collapse (case p_gen = 1)
 
-| file | contents |
-|---|---|
-| `params.R` | every parameter with tier tag (mechanism / policy / passenger), default justification, and sweep rationale |
-| `kernel.R` | the stock-flow kernel + conservation assertions |
-| `experiments.R` | governor ladder, phase map, stress tests, threshold check, policy experiment, figures |
-| `extensions.R` | future mechanisms as inert code (human buffer, resolution ratio, activation mixture, redistribution, strain cost) |
+The whole boundary collapses onto a single interpretable composite:
 
-The parameter discipline: every number is swept (Tier 1 mechanism), swept only
-in the policy experiments (Tier 2), or frozen with a one-line justification
-(Tier 3 passenger). Anything else is a fenced dormant hook. An unjustified
-parameter is a hole in the lower-bound argument, so none are allowed.
+L = p_act · (1 − p_out) / p_out          # follow-up hours generated per hour of intake
+max_safe_p_in = 1 / (1 + L)
+sustainability condition:  p_in · (1 + L) ≤ 1
 
-The poster-era single-file model is preserved at the git tag `poster-2026-04`.
-The rebuilt kernel reproduces it exactly (float-level parity) when the
-poster's stochastic activation mixture is pinned to its expectation.
+Plain language: each hour of intake eventually creates `L` hours of follow-up obligation. Intake is sustainable only if intake plus its own downstream load fits within capacity. Different `(p_act, p_out)` pairs with the same `L` give the same safe cap — the spectrum is genuinely one-dimensional at `p_gen = 1`. `p_gen` is a real third dimension away from 1, but the full closed form above remains exact.
 
-## Scope
+Why this matters operationally: `L` is a ratio of two things a clinic already counts (steady-state follow-up hours ÷ intake hours). The tool collapses from "estimate three latent parameters" to "estimate one observable ratio."
 
-A minimal conceptual model — a lower-bound argument, not a simulator. It
-assumes away nearly everything hard (fungible demand, frictionless capacity,
-no strategic behavior, no human buffer) and asks whether partial observability
-plus ordinary rational governance is *already* enough to generate divergence
-between visible stability and true burden. It is not clinical decision
-support, uses no patient data, and does not model where unmet demand goes —
-measuring the gap is the complete claim; its fate is a separate research
-program.
+________________________________________
 
-## Intellectual property notice
+Analytic derivation
 
-This repository contains a minimal conceptual implementation intended for
-research and demonstration purposes. It does not represent a production system
-or complete operational framework.
+Work in Regime B, in the bounded regime (steady state exists, backlog = 0 so all obligations are served each period).
+
+Setup. With `backlog = 0`, the period's obligation is just the activated follow-up: `obligation = follow_due = panel · p_act`. In the bounded regime the remaining capacity after intake covers it, so:
+
+served_oblig  = follow_due = panel · p_act
+served_intake = p_in · C
+
+Panel recursion. Generated forward obligation is `generated = (served_oblig + served_intake) · p_gen`. The panel update (activated mass leaves, generated mass enters, then attrition) is:
+
+panel_{t+1} = (panel_t − follow_due + generated) · (1 − p_out)
+
+Substitute `follow_due = panel_t·p_act` and `generated = (panel_t·p_act + p_in·C)·p_gen`:
+
+panel_{t+1} = ( panel_t·(1 − p_act) + (panel_t·p_act + p_in·C)·p_gen ) · (1 − p_out)
+= panel_t · (1 − p_act·(1 − p_gen)) · (1 − p_out)  +  p_in·C·p_gen·(1 − p_out)
+
+This is an affine map `panel_{t+1} = a·panel_t + b` with:
+
+a = (1 − p_act·(1 − p_gen)) · (1 − p_out)     # generation-loop factor
+b = p_in · C · p_gen · (1 − p_out)
+
+Fixed point. A stable steady state exists iff `a < 1`, giving `panel* = b / (1 − a)`, and the denominator is exactly `M`:
+
+1 − a = p_out + p_act·(1 − p_gen)·(1 − p_out) = M
+
+Sustainability condition. The bounded regime is self-consistent only if the steady-state follow-up demand fits in the capacity left after intake:
+
+panel* · p_act  ≤  C · (1 − p_in)
+
+Substitute `panel* = p_in·C·p_gen·(1 − p_out) / M` and let `N = p_act·p_gen·(1 − p_out)`:
+
+p_in · N / M  ≤  1 − p_in
+p_in · (M + N)  ≤  M
+p_in  ≤  M / (M + N)          [QED]
+
+Collapse at p_gen = 1. Then `M = p_out` and `N = p_act·(1 − p_out)`, so:
+
+max_safe_p_in = p_out / (p_out + p_act·(1 − p_out)) = 1 / (1 + L),   L = p_act·(1 − p_out)/p_out
+
+The numeric simulation reproduces this boundary to grid resolution across all tested `(p_act, p_gen, p_out)`, confirming the derivation.
+
+________________________________________
+
+Figures produced by the MVP
+
+FIG 1 — Mechanism: intake crossover (A admits more early, then throttles) + cumulative completed care (A ≥ B).
+FIG 2 — Structural: terminal backlog vs `p_out` for both regimes; B tips below a threshold, A bounded across the whole spectrum.
+FIG 3 — Phase diagram + derived safe-intake margin: (a) stable/diverging map of B in `(p_in, p_out)`; (b) the `max_safe_p_in` boundary curve — the deliverable.
+FIG 4 — Dynamical: hysteresis after a transient demand pulse — A recovers, B stays permanently elevated.
+Pinned reference values (baseline: p_in=0.2, p_out=0.05, p_gen=1.0, p_act=0.25, 520 wk)
+
+Intake crossover: week 10
+B tips at p_out ≤ ~0.055; A bounded across all p_out
+Hysteresis: A settles ~0; B settles ~513 (permanent)
+p_gen = 1.0 is NOT a knife-edge (divergence spans p_gen 0.9–1.2)
+Safe-intake margin curve: 0.04 → 0.50 across p_out 0.01 → 0.20
+Cross-language check: R and Python kernels must reproduce these four values.
+
+________________________________________
+
+Positioning (what is / isn't novel)
+
+The follow-up-vs-access tension is well-known (NHS PIFU; Queensland review-visit waitlist work; practice-management N:F ratio heuristics). Queueing theory owns utilization→nonlinear-delay (Green; the 85% rule; the NICU Mt/Gt/∞ "average-safe still overflows" result). System dynamics is used for chronic-disease prevention, not intake-governance stability. NHS England has a "caseload model" (a planning calculator, not a stability analysis).
+
+The niche this fills: a minimal, legible model of a self-generating longitudinal obligation system that (a) shows the intake-governance rule determines dynamical stability class, (b) yields a closed-form, tunable, per-system safe-intake margin, and (c) reframes ubiquitous "anomalous" accumulation as a deterministic structural consequence, not local mismanagement. Contribution type: synthesis + application + deliverable — NOT new mathematics, NOT a newly discovered phenomenon.
+
+Must-cite nearest neighbors to differentiate against:
+NICU Mt/Gt/∞ capacity paper (bounded-LOS bed occupancy vs. our unbounded-horizon self-generating obligation).
+NHS England caseload model (planning calculator vs. stability/phase analysis).
+Green / queueing theory (specialization to self-generating longitudinal demand, not competition).
+________________________________________
+
+Roadmap / next steps
+
+Now (capstone-ready)
+[x] Analytic derivation (steady-state recursion → fixed point → boundary). (above)
+[ ] Confirm R↔Python parity on the four pinned values.
+[ ] Draft the related-work / positioning paragraph using the neighbors above.
+Pillar 2 (named, not built for MVP)
+[ ] Observability layer: reactivate `p_surf < 1` (the censored-signal claim) as a distinct pillar.
+[ ] `p_out` decomposition: split real outflow into appropriate discharge (safe to count as headroom) vs. attrition-unmet / abandonment (must NOT count as headroom). Capacity math is composition-agnostic by design, but counting abandonment as capacity rewards the exact failure the cap exists to prevent — pair the tool with a composition monitor.
+[ ] Human-buffer / overwork and quality-degradation loss terms (likely the reason real systems may tip before the `p_in·(1+L)=1` boundary).
+Empirical validation layer (the falsification frame)
+[ ] Estimate `L` (and `p_gen`, `p_act`, `p_out`) retrospectively from panel/EHR data.
+[ ] Test the sharp prediction: do panels above `p_in·(1+L)=1` accumulate, and those below stay bounded?
+[ ] Every outcome is informative: clean corroboration → deployable heuristic; directional-but-miscalibrated → localizes the omitted loss term (informs Pillar 2); no prediction → conserved-generation assumption fails, systems aren't in this class (still a real finding).
+[ ] Estimation must use recency-weighting / changepoint detection, not a growing pooled mean: narrowing confidence intervals are trustworthy only under confirmed stationarity; a stable-looking average can be confidently wrong across a regime shift.
+[ ] Conservative calibration heuristic: err toward lower `p_out` (→ lower `L` → lower cap), since over-estimating headroom is the asymmetrically dangerous error.
+Operational artifact (aspirational)
+[ ] Per-clinician positioning/monitoring instrument (not an oracle): "here is where your panel sits relative to the stability boundary, with confidence bounds" — a leading-indicator dashboard, decision-rights left with the clinician/manager.
+________________________________________
+
+Run
+
+Rscript mvp.R          # writes figures to ./figs, prints pinned summary
+
+Dependencies: base R only. Tune everything in the `PARAMS` / `SWEEPS` blocks; the kernel and figure blocks need no edits for parameter exploration.
+
+________________________________________
+
+Design discipline (guardrails)
+
+Add complexity only where it changes the mechanism, never where it only changes magnitude or realism.
+Keep the three epistemic layers distinct: derived result ≠ falsifiable prediction ≠ empirical truth.
+Beauty of the formula is not evidence of its correspondence to reality.
